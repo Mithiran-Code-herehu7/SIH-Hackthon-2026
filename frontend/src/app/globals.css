@@ -1,0 +1,233 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --retro-bg: #F5F2EB;
+    --retro-surface: #FAF8F4;
+    --retro-accent: #2C2B5B;
+    --retro-ink: #1C1B24;
+    --retro-muted: #666370;
+    --retro-border: #DCD7CE;
+  }
+}
+
+body {
+  background-color: #F5F2EB;
+  color: #1C1B24;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Retro Editorial Fonts */
+.font-display-serif {
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+}
+
+.font-sans-body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.font-mono-code {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #EAE5DC;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C8C2B6;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A6A094;
+}
+
+/* Single Retro Color Styling for Markdown */
+.markdown-body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #1C1B24;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700;
+  color: #1C1B24;
+  margin-top: 1.35rem;
+  margin-bottom: 0.6rem;
+  line-height: 1.25;
+}
+
+.markdown-body h1 { font-size: 1.75rem; }
+.markdown-body h2 { font-size: 1.45rem; }
+.markdown-body h3 { font-size: 1.25rem; }
+.markdown-body h4 { font-size: 1.05rem; }
+
+.markdown-body p {
+  margin-bottom: 0.85rem;
+  color: #3B3947;
+}
+
+.markdown-body ul {
+  list-style-type: disc;
+  padding-left: 1.35rem;
+  margin-bottom: 0.85rem;
+  color: #3B3947;
+}
+
+.markdown-body ol {
+  list-style-type: decimal;
+  padding-left: 1.35rem;
+  margin-bottom: 0.85rem;
+  color: #3B3947;
+}
+
+.markdown-body li {
+  margin-bottom: 0.35rem;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid #2C2B5B;
+  padding-left: 1rem;
+  color: #2C2B5B;
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  margin-top: 0.85rem;
+  margin-bottom: 0.85rem;
+  background: #EAE5DC;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.markdown-body code {
+  background: #EAE5DC;
+  color: #2C2B5B;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.375rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  border: 1px solid #DCD7CE;
+}
+
+.markdown-body pre {
+  background: #1C1B24;
+  color: #FAF8F4;
+  border-radius: 0.85rem;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin-top: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  color: #EAE5DC;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.85rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.9rem;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #DCD7CE;
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: #EAE5DC;
+  color: #1C1B24;
+  font-weight: 600;
+}
+
+.markdown-body tr:nth-child(even) {
+  background: #FAF8F4;
+}
+
+/* Single Retro Color Surface & Button Utilities */
+.surface-card {
+  background-color: #FAF8F4;
+  border: 1px solid #DCD7CE;
+  box-shadow: 0 4px 16px -2px rgba(28, 27, 36, 0.04);
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms ease;
+}
+
+.btn-retro {
+  background-color: #2C2B5B;
+  color: #FAF8F4;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: transform 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
+}
+
+.btn-retro:hover:not(:disabled) {
+  background-color: #1D1C40;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px -2px rgba(44, 43, 91, 0.25);
+}
+
+.btn-retro:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Accessible Focus Rings */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #F5F2EB, 0 0 0 4px #2C2B5B;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 300ms ease forwards;
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 350ms ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
