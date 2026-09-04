@@ -1,0 +1,63 @@
+version: '3.8'
+
+# Sovereign Agentic AI Workbench - Air-Gapped Compose Architecture
+# Problem Statement 26117 | Mangalore Refinery and Petrochemicals Limited (MRPL)
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: sovereign-ollama
+    restart: always
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_HOST=0.0.0.0:11434
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    networks:
+      - sovereign-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sovereign-backend
+    restart: always
+    depends_on:
+      - ollama
+    environment:
+      - APP_NAME=Sovereign AI Workbench
+      - APP_VERSION=1.0.0
+      - DEBUG=false
+      - AIR_GAPPED_MODE=true
+      - ALLOWED_LOCAL_HOSTS=localhost,127.0.0.1,::1,ollama
+      - ALLOWED_LOCAL_PORTS=11434,8000,8080,5173,3000
+      - LLM_PROVIDER=ollama
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen3:8b
+      - MULTIMODAL_PROVIDER=ollama
+      - VISION_MODEL=qwen3:8b
+      - EMBEDDING_MODEL=all-MiniLM-L6-v2
+      - TRANSFORMERS_OFFLINE=1
+      - HF_HUB_OFFLINE=1
+      - HF_DATASETS_OFFLINE=1
+      - ENFORCE_RBAC=true
+      - DEFAULT_USER_ROLE=ENGINEER
+      - AUDIT_SECRET_KEY=mrpl-air-gapped-cryptographic-audit-key-2026
+      - ENABLE_DOCS=false
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - sovereign-net
+
+networks:
+  sovereign-net:
+    driver: bridge
+
+volumes:
+  ollama-data:
+    driver: local
+
