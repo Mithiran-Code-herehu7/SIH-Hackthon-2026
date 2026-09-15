@@ -25,12 +25,24 @@ class SearchRequest(BaseModel):
     top_k: int = Field(5, ge=1, le=100)
     file_id: str | None = None
 
+import hashlib
+
 async def _is_duplicate(db: AsyncSession, filename: str, content: bytes) -> bool:
-    result = await db.execute(select(Document).where(Document.filename == filename, Document.size_bytes == len(content)))
+    content_hash = hashlib.sha256(content).hexdigest()
+    result = await db.execute(select(Document))
     for document in result.scalars():
+        if document.filename == filename and document.size_bytes == len(content):
+            path = settings.data_dir / "vault" / f"{document.file_id}{Path(document.filename).suffix.lower()}"
+            if path.exists() and path.read_bytes() == content:
+                return True
         path = settings.data_dir / "vault" / f"{document.file_id}{Path(document.filename).suffix.lower()}"
-        if path.exists() and path.read_bytes() == content:
-            return True
+        if path.exists():
+            try:
+                existing_content = path.read_bytes()
+                if hashlib.sha256(existing_content).hexdigest() == content_hash:
+                    return True
+            except OSError:
+                pass
     return False
 
 @router.post("/ingest", response_model=DocumentResponse)
@@ -80,6 +92,12 @@ async def ingest_document(
         await db.rollback()
         raise HTTPException(422, f"Document ingestion failed: {exc}") from exc
     return DocumentResponse(**document.model_dump(), status=f"processed:{chunk_count}_chunks;{len(visual_artifacts)}_visuals")
+
+from app.rag.service import get_rag_status
+
+@router.get("/status")
+async def document_status():
+    return get_rag_status()
 
 @router.post("/search")
 async def search_documents(

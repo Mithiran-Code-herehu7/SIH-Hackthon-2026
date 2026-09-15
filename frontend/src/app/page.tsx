@@ -11,6 +11,7 @@ import { DocumentDropzone } from '@/components/DocumentDropzone';
 import { WorkflowCard } from '@/components/WorkflowCard';
 import { ProcessJournal } from '@/components/ProcessJournal';
 import { NotificationToast } from '@/components/NotificationToast';
+import { IngestionStatusPanel } from '@/components/IngestionStatusPanel';
 import {
   ChatMessageItem,
   IngestResponse,
@@ -18,7 +19,7 @@ import {
   ToastMessage,
 } from '@/lib/types';
 import { INITIAL_CHAT_MESSAGES } from '@/lib/mockData';
-import { sendQuery, setMockMode } from '@/lib/api';
+import { getRagStatus, sendQuery, setMockMode } from '@/lib/api';
 
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessageItem[]>(INITIAL_CHAT_MESSAGES);
@@ -31,9 +32,46 @@ export default function Home() {
     files: 3,
     chunks: 42,
   });
+  const [ragStatus, setRagStatus] = useState<any>({
+    indexPath: 'data/faiss_index/documents.index',
+    totalChunks: 42,
+    indexedDocumentsCount: 3,
+    indexedDocuments: ['MRPL_Operations_Safety_Demo_Pack.md', 'HSE_Report_2025.pdf', 'SOP_Operations.docx'],
+    lastIngestionTime: 'Just now',
+    latestQueryRetrieval: {
+      query: 'Why is Pump P-204B considered a critical priority?',
+      retrievedCount: 4,
+      status: 'Success',
+      sources: [
+        { file: 'MRPL_Operations_Safety_Demo_Pack.md', section: '2.2 Key operating parameters' },
+        { file: 'MRPL_Operations_Safety_Demo_Pack.md', section: '3.1 Incident and near-miss register', ids: ['INC-01', 'INC-07', 'INC-13'] },
+        { file: 'MRPL_Operations_Safety_Demo_Pack.md', section: '4.1 Pump P-204B recurring vibration' },
+        { file: 'MRPL_Operations_Safety_Demo_Pack.md', section: '6 Corrective action plan', ids: ['CAP-01', 'CAP-02'] },
+      ],
+    },
+  });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch live RAG status on load
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const status = await getRagStatus();
+        setRagStatus((prev: any) => ({
+          ...prev,
+          indexPath: status.index_path,
+          totalChunks: status.total_chunks,
+          indexedDocumentsCount: status.indexed_documents_count,
+          indexedDocuments: status.indexed_documents,
+        }));
+      } catch (err) {
+        console.warn('Failed to fetch initial RAG status:', err);
+      }
+    };
+    fetchStatus();
+  }, []);
 
   // Auto-scroll conversation view to bottom
   useEffect(() => {
@@ -112,13 +150,27 @@ export default function Home() {
                 ...msg,
                 isLoading: false,
                 content: response.answer,
+                title: response.title,
+                comparison: response.comparison,
                 sources: response.sources,
+                uncertainties: response.uncertainties,
                 files: response.files,
                 request_id: response.request_id,
               }
             : msg
         )
       );
+
+      // Update RAG retrieval debug trace
+      setRagStatus((prev: any) => ({
+        ...prev,
+        latestQueryRetrieval: {
+          query: queryText,
+          retrievedCount: response.sources ? response.sources.length : 0,
+          status: response.sources && response.sources.length > 0 ? 'Success' : 'No evidence found',
+          sources: response.sources || [],
+        },
+      }));
 
       if (response.request_id) {
         setActiveExplanationId(response.request_id);
@@ -151,6 +203,21 @@ export default function Home() {
       files: prev.files + res.files_ingested,
       chunks: prev.chunks + res.chunks_created,
     }));
+
+    // Refresh RAG Status Panel
+    getRagStatus()
+      .then((status) => {
+        setRagStatus((prev: any) => ({
+          ...prev,
+          indexPath: status.index_path,
+          totalChunks: status.total_chunks,
+          indexedDocumentsCount: status.indexed_documents_count,
+          indexedDocuments: status.indexed_documents,
+          lastIngestionTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }));
+      })
+      .catch(() => {});
+
     addToast(
       'success',
       'Documents Ingested',
@@ -184,24 +251,34 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F2EB] text-[#1C1B24] font-sans selection:bg-[#2C2B5B] selection:text-white">
-      {/* 1. Brand Header: Clean title (no glitch on scroll, no subtitle) & server switch */}
+      {/* 1. Brand Header */}
       <BrandHeader
         isMockMode={isMockMode}
         onToggleMockMode={handleToggleMockMode}
       />
 
-      {/* 2. Intro Section (Left Aligned Text & Actions) */}
+      {/* 2. Intro Section */}
       <IntroSection
         onStartWithDocument={handleStartWithDocument}
         onTryGuidedDemo={handleTryGuidedDemo}
       />
 
-      {/* 3. Main Workspace (Full Display Width Layout) */}
+      {/* 3. Main Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 pb-12 space-y-6">
-        {/* DOCUMENT DROPZONE ON TOP OF THE CHAT AREA */}
+        {/* DOCUMENT DROPZONE ON TOP */}
         <DocumentDropzone
           onIngestSuccess={handleIngestSuccess}
           onError={(err) => addToast('error', 'Ingestion Failure', err)}
+        />
+
+        {/* INGESTION & RETRIEVAL DEBUG STATUS PANEL */}
+        <IngestionStatusPanel
+          indexPath={ragStatus.indexPath}
+          totalChunks={ragStatus.totalChunks}
+          indexedDocumentsCount={ragStatus.indexedDocumentsCount}
+          indexedDocuments={ragStatus.indexedDocuments}
+          lastIngestionTime={ragStatus.lastIngestionTime}
+          latestQueryRetrieval={ragStatus.latestQueryRetrieval}
         />
 
         {/* CHAT CONVERSATION WORKSPACE CONTAINER */}

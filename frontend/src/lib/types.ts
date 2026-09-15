@@ -10,6 +10,8 @@ export interface GeneratedFile {
   type: 'ppt' | 'excel' | 'word' | 'report' | string;
   name: string;
   download_url: string;
+  slide_count?: number;
+  sheets?: string[];
 }
 
 export interface IngestResponse {
@@ -23,9 +25,20 @@ export interface QueryRequest {
   mode: TaskMode;
 }
 
+export interface ComparisonItem {
+  area: string;
+  issues: string[];
+  evidence_ids?: string[];
+  risk_level: 'High' | 'Medium' | 'Low' | string;
+  priority_reason: string;
+}
+
 export interface QueryResponse {
   answer: string;
+  title?: string;
+  comparison?: ComparisonItem[];
   sources: SourceItem[];
+  uncertainties?: string[];
   files: GeneratedFile[];
   request_id: string;
 }
@@ -47,9 +60,12 @@ export interface ChatMessageItem {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  title?: string;
   timestamp: string;
   mode?: TaskMode;
+  comparison?: ComparisonItem[];
   sources?: SourceItem[];
+  uncertainties?: string[];
   files?: GeneratedFile[];
   request_id?: string;
   isLoading?: boolean;

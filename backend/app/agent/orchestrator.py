@@ -21,7 +21,9 @@ Intent = Literal[
     "procedure_lookup",
     "comparison",
     "report_generation",
+    "generate_ppt",
     "image_analysis",
+    "generate_excel",
     "general_question",
 ]
 
@@ -35,7 +37,9 @@ _TOOL_BY_INTENT: dict[str, str | None] = {
     "procedure_lookup": "procedure_lookup",
     "comparison": "document_comparison",
     "report_generation": "report_generation",
+    "generate_ppt": "generate_ppt",
     "image_analysis": "image_analysis",
+    "generate_excel": "generate_excel",
     "general_question": None,
 }
 
@@ -163,9 +167,33 @@ def _calculator_arguments(query: str) -> dict[str, Any] | None:
 def _fallback_classify(query: str, image_available: bool = False) -> AgentDecision:
     """Safe deterministic fallback when the local LLM decision is unusable."""
     query_lower = query.lower()
+    is_excel = (
+        "[task mode: generate_excel]" in query_lower
+        or "generate_excel" in query_lower
+        or bool(re.search(r"\b(?:generate|create|produce|compile|export)\s+(?:an?\s+)?(?:excel|spreadsheet|workbook)\b", query_lower))
+        or any(keyword in query_lower for keyword in (
+            "excel", ".xlsx", "incident register", "create excel", "create an excel",
+            "generate excel", "spreadsheet", "excel workbook", "downloadable excel file"
+        ))
+    )
+    if is_excel:
+        return AgentDecision("generate_excel", "generate_excel", "Fallback classifier identified Excel generation request.", {})
+
+    is_ppt = (
+        bool(re.search(r"\b(?:generate|create|produce|compile|write|build|make)\s+(?:an?\s+)?(?:powerpoint|presentation|slide\s*deck|slides|slide|ppt|pptx|briefing\s*deck|briefing)\b", query_lower))
+        or any(keyword in query_lower for keyword in (
+            "powerpoint", "presentation", "slide deck", "slide", "slides", "ppt", "pptx",
+            "briefing deck", "briefing", "create powerpoint", "create presentation", "generate and attach presentation"
+        ))
+    )
+    if is_ppt:
+        return AgentDecision("generate_ppt", "generate_ppt", "Fallback classifier identified PowerPoint presentation generation request.", {})
+
     is_report = (
-        bool(re.search(r"\b(?:generate|create|produce|compile|write)\s+(?:an?\s+)?report\b", query_lower))
-        or any(keyword in query_lower for keyword in ("generate report", "create report", "analysis report", "produce report", "report generation"))
+        "[task mode: generate_report]" in query_lower
+        or "generate_report" in query_lower
+        or bool(re.search(r"\b(?:generate|create|produce|compile|write)\s+(?:an?\s+)?(?:report|compliance report|audit report|docx|word report)\b", query_lower))
+        or any(keyword in query_lower for keyword in ("generate report", "create report", "analysis report", "produce report", "report generation", "compile report", "word report", ".docx", "technical compliance report"))
     )
     if is_report:
         return AgentDecision("report_generation", "report_generation", "Fallback classifier identified structured report generation.", {})
@@ -180,13 +208,13 @@ def _fallback_classify(query: str, image_available: bool = False) -> AgentDecisi
         )
     if any(keyword in query_lower for keyword in ("compare", "comparison", "similarities", "differences", "versus", "vs ")):
         return AgentDecision("comparison", "document_comparison", "Fallback classifier identified a bounded document comparison.", {})
-    if any(keyword in query_lower for keyword in ("hazard", "ppe", "safety precaution", "safety analysis", "safety", "precaution", "alarm")):
-        return AgentDecision("safety_analysis", "safety_analysis", "Fallback classifier identified a safety evidence request.", {})
     if any(keyword in query_lower for keyword in ("emergency shutdown", "emergency response", "procedure", "instruction", "manual step", "steps")):
         return AgentDecision("procedure_lookup", "procedure_lookup", "Fallback classifier identified a procedure lookup.", {})
+    if any(keyword in query_lower for keyword in ("hazard", "ppe", "safety precaution", "safety analysis", "safety", "precaution", "alarm")):
+        return AgentDecision("safety_analysis", "safety_analysis", "Fallback classifier identified a safety evidence request.", {})
     if any(keyword in query_lower for keyword in ("equipment", "inspect", "condition", "pump", "valve", "compressor", "vessel", "heat exchanger")):
         return AgentDecision("equipment_analysis", "equipment_analysis", "Fallback classifier identified equipment analysis.", {})
-    if any(keyword in query_lower for keyword in ("cdu", "distillation", "fractions", "main stages", "process analysis", "stages produced", "crude")):
+    if any(keyword in query_lower for keyword in ("cdu", "cdu-1", "distillation", "fractions", "main stages", "process analysis", "stages produced", "crude", "feed rate")):
         return AgentDecision("process_analysis", "process_analysis", "Fallback classifier identified process analysis.", {})
     visual_keywords = ["image", "diagram", "flow diagram", "shown", "visible", "inspection photo"]
     if image_available and any(keyword in query_lower for keyword in visual_keywords):
@@ -202,7 +230,8 @@ def _fallback_classify(query: str, image_available: bool = False) -> AgentDecisi
     document_keywords = [
         "document", "file", "report", "procedure", "manual", "refinery",
         "process", "policy", "safety", "equipment", "maintenance", "inspection",
-        "crude", "distillation", "fraction",
+        "crude", "distillation", "fraction", "what is", "how many", "what are",
+        "average", "rate", "feed",
     ]
     if any(keyword in query_lower for keyword in metadata_keywords):
         return AgentDecision(
@@ -285,6 +314,8 @@ Allowed intent/tool pairs:
 - procedure_lookup / procedure_lookup: Step-by-step operating procedures, emergency shutdown, emergency response steps.
 - comparison / document_comparison: Comparing multiple documents, procedures, or specifications.
 - report_generation / report_generation: Requests to generate an analysis or summary report.
+- generate_ppt / generate_ppt: Requests to create or generate a PowerPoint presentation (.pptx) or slide deck.
+- generate_excel / generate_excel: Requests to create or generate an Excel file or spreadsheet (.xlsx).
 - image_analysis / image_analysis: Direct visual analysis of a supplied image artifact (only when available).
 - general_question / null: Generic conversation, greetings, or non-technical questions.
 
@@ -317,12 +348,16 @@ async def run_agent(
 ) -> dict[str, Any]:
     """Select and execute one approved registered tool, with safe failure reporting."""
     decision = classify_intent(query, image_available=bool(image_ref))
+    from app.agent.task_spec_builder import build_task_spec
+    task_spec = build_task_spec(query=query, request_id=request_id)
+
     result: dict[str, Any] = {
         "query": query, "intent": decision.intent, "tool": decision.tool,
         "reason": decision.reason, "sources": [], "tool_result": None,
         "tool_execution_status": "not_required", "failure": None,
         "tools_executed": [], "execution_order": [], "calculation_operations": [],
         "visual_artifact_ids": [image_ref] if image_ref else [],
+        "task_spec": task_spec,
     }
     if decision.tool is None:
         return result
@@ -334,6 +369,12 @@ async def run_agent(
 
         if decision.tool == "document_search":
             result["sources"] = execute("document_search", query=query, top_k=top_k, file_id=file_id)
+        elif decision.tool == "generate_ppt":
+            result["sources"] = execute("document_search", query=query, top_k=min(top_k, 10), file_id=file_id)
+            result["tool_result"] = execute("generate_ppt", filename=task_spec.output_filename, title=task_spec.title, slide_count=task_spec.slide_count, sources=result["sources"], task_spec=task_spec)
+        elif decision.tool == "generate_excel":
+            result["sources"] = execute("document_search", query=query, top_k=min(top_k, 10), file_id=file_id)
+            result["tool_result"] = execute("generate_excel", filename=task_spec.output_filename, sources=result["sources"], task_spec=task_spec)
         elif decision.tool == "document_metadata":
             if db is None:
                 raise ValueError("Database session is required for document metadata.")

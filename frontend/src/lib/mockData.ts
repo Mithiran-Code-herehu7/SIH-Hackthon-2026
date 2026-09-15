@@ -9,57 +9,12 @@ export const INITIAL_CHAT_MESSAGES: ChatMessageItem[] = [
 I am your private enterprise AI assistant, optimized for refineries, PSUs, and defense installations. All data processing occurs locally within your isolated network environment.
 
 #### Quick Start Guide:
-1. **Ingest Confidential Documents**: Upload PDFs, DOCX, XLSX, or TXT files using the document dropzone on the right.
+1. **Ingest Confidential Documents**: Upload PDFs, DOCX, XLSX, or TXT files using the document dropzone above.
 2. **Select Task Mode**: Choose between standard Chat, PPT Presentation, Excel Spreadsheet, or formal Safety Report generation.
-3. **Execute AI Workflows**: Try one of the pre-configured demo scenarios below or ask custom domain queries.
+3. **Execute AI Workflows**: Try one of the pre-configured scenarios below or ask custom domain queries.
 
 *Audit trails and source references are automatically appended to every AI output for full regulatory compliance.*`,
     timestamp: '09:00 AM',
-  },
-  {
-    id: 'msg-sample-user',
-    role: 'user',
-    content: 'Summarize recent safety incidents from the HSE 2025 report and generate an executive PowerPoint presentation deck.',
-    timestamp: '09:02 AM',
-    mode: 'generate_ppt',
-  },
-  {
-    id: 'msg-sample-assistant',
-    role: 'assistant',
-    content: `### Safety Incidents & Hazard Analysis Summary (HSE 2025)
-
-Based on the ingested **HSE_Report_2025.pdf** and **SOP_Operations.docx**, here is the synthesized executive summary:
-
-#### Key Findings:
-- **Pressure Release Valve Malfunction (Unit 4B)**: Occurred on March 14, 2025. Zero casualties reported due to secondary containment triggering within 12 seconds.
-- **Flange Gasket Leakage (Cracker Block)**: Detected during routine thermographic inspection. Immediate isolation performed as per SOP Section 4.2.
-- **Safety Compliance Metric**: 98.4% adherence to mandatory PPE protocols across all operational shifts.
-
-#### Recommendations:
-1. Schedule mandatory quarter-end calibration for relief valves in High-Pressure Hydrocracker units.
-2. Upgrade seal inspection frequency to bi-weekly for sulfur recovery loops.
-
-I have generated an executive slide presentation summarizing these findings with high-visibility charts and compliance matrices.`,
-    timestamp: '09:03 AM',
-    mode: 'generate_ppt',
-    sources: [
-      { file: 'HSE_Report_2025.pdf', page: 3 },
-      { file: 'HSE_Report_2025.pdf', page: 12 },
-      { file: 'SOP_Operations.docx', section: '4.2' },
-    ],
-    files: [
-      {
-        type: 'ppt',
-        name: 'safety_summary_q1_2025.pptx',
-        download_url: '/files/safety_summary_q1_2025.pptx',
-      },
-      {
-        type: 'report',
-        name: 'HSE_Incident_Audit_Report.docx',
-        download_url: '/files/HSE_Incident_Audit_Report.docx',
-      },
-    ],
-    request_id: 'req_demo_safety_ppt',
   },
 ];
 
@@ -130,78 +85,82 @@ export const MOCK_EXPLANATIONS: Record<string, ExplanationResponse> = {
 
 export function getMockQueryResponse(query: string, mode: string): QueryResponse {
   const reqId = `req_${Math.random().toString(36).substring(2, 9)}`;
+  const qLower = (query || '').toLowerCase();
 
+  let title = 'Document Corpus Intelligence Overview';
   let answer = '';
+  let uncertainties: string[] = [];
   let sources = [
     { file: 'HSE_Report_2025.pdf', page: 3 },
     { file: 'SOP_Operations.docx', section: '4.2' },
   ];
   let files: { type: string; name: string; download_url: string }[] = [];
 
-  if (mode === 'generate_ppt') {
-    answer = `### 📊 Executive Presentation Generated
+  if (qLower.includes('monetary')) {
+    title = 'Information Not Available in Corpus';
+    answer = 'The uploaded document does not provide a monetary-loss figure for Pump P-204B.';
+    uncertainties = ['The uploaded document does not provide a monetary-loss figure for Pump P-204B.'];
+  } else if (qLower.includes('recordable incidents')) {
+    title = 'Incident Analysis';
+    answer = 'Based on the uploaded documents, there were **3 recordable incidents**.';
+  } else if (qLower.includes('corrective action') || qLower.includes('cap-')) {
+    title = 'Open Corrective Action Items';
+    answer = `The open corrective action items identified in the document are:
 
-I have analyzed your query: **"${query}"** and constructed a structured PowerPoint deck aligned with PSU/Refinery reporting standards.
+- **CAP-01**: High-pressure hydrocracker relief valve calibration.
+- **CAP-02**: Thermographic flange gasket seal replacement in Cracker Block.
+- **CAP-03**: Bi-weekly inspection frequency upgrade for sulfur recovery loop seals.
+- **CAP-04**: Emergency ESD Step 3 cooling water loss drill for Crude Distillation Unit.
+- **CAP-05**: Pressure gauge re-certification for Unit 4B containment.
+- **CAP-07**: Update PPE compliance tracking across night shifts.
+- **CAP-08**: Calibration of relief valves in sulfur recovery unit.`;
+  } else if (mode === 'generate_ppt' || qLower.includes('powerpoint') || qLower.includes('ppt') || qLower.includes('slide')) {
+    const titleMatch = query.match(/titled\s+["']?(.*?)["']?(?:\.|\s+|$)/i);
+    const pptTitle = titleMatch ? titleMatch[1].trim() : 'July–August 2026 Operations Safety Review';
+    const fileName = `${pptTitle.replace(/\s+/g, '_').replace(/–/g, '-')}.pptx`;
 
-#### Key Highlights Included in Deck:
-- **Slide 1**: Executive Overview & Scope
-- **Slide 2**: Quantitative Incident Breakdown & Risk Matrix
-- **Slide 3**: Root Cause Analysis & Containment Response
-- **Slide 4**: Operational SOP Compliance Rates
-- **Slide 5**: Corrective Action Plan & Timeline
+    title = 'Executive Presentation Deck Synthesized';
+    answer = `An executive PowerPoint presentation deck titled **${pptTitle}** has been created.
 
-You can download the generated presentation file directly below.`;
+**Presentation Structure:**
+- **Slide 1**: Executive Summary & Operations Overview
+- **Slide 2**: Key Operational & Safety Adherence Metrics
+- **Slide 3**: Incident Breakdown & Hazard Containment
+- **Slide 4**: Open Corrective Action Items & Timelines
+- **Slide 5**: Compliance Scorecard & Recommendations`;
+
     files.push({
       type: 'ppt',
-      name: `AI_Generated_Deck_${Date.now().toString().slice(-4)}.pptx`,
-      download_url: `/files/AI_Generated_Deck_${Date.now().toString().slice(-4)}.pptx`,
+      name: fileName,
+      download_url: `/files/${fileName}`,
     });
-  } else if (mode === 'generate_excel') {
-    answer = `### 📈 Audit Spreadsheet & Telemetry Workbook Generated
-
-Processed data chunks and structured telemetry observations for query: **"${query}"**.
-
-#### Dataset Summary:
-- **Total Rows Computed**: 428 records
-- **Calculated KPIs**: Mean Time Between Failures (MTBF), Peak Temp Variances, Inspection Frequencies
-- **Formulas applied**: \`SUMIF\`, \`VLOOKUP\`, and conditional anomaly highlighting.
-
-Click below to download the compiled Excel workbook.`;
+  } else if (mode === 'generate_excel' || qLower.includes('excel') || qLower.includes('.xlsx') || qLower.includes('incident register')) {
+    title = 'Incident register workbook created';
+    answer = 'I created an Excel workbook containing the complete incident register and a summary sheet.';
+    sources = [
+      { file: 'MRPL_Operations_Safety_Demo_Pack.md', section: '3.1 Incident and near-miss register' },
+      { file: 'MRPL_Operations_Safety_Demo_Pack.md', section: '3.2 Event summary by category' },
+    ];
     files.push({
       type: 'excel',
-      name: `Telemetry_Audit_${Date.now().toString().slice(-4)}.xlsx`,
-      download_url: `/files/Telemetry_Audit_${Date.now().toString().slice(-4)}.xlsx`,
+      name: 'MRPL_Operations_Safety_Demo_Pack_Incident_Register.xlsx',
+      download_url: '/files/MRPL_Operations_Safety_Demo_Pack_Incident_Register.xlsx',
     });
   } else if (mode === 'generate_report') {
-    answer = `### 📜 Compliance & Audit Document Compiled
+    title = 'Structured Technical Compliance Report';
+    answer = `A formal technical compliance report has been compiled and saved to your workspace.
 
-Formulated formal technical report for: **"${query}"**.
+**Executive Summary:**
+The report synthesizes operational incident logs, equipment condition assessments, and safety compliance metrics. All findings have been verified against local site operating procedures.`;
 
-#### Document Structure:
-1. **Executive Summary & Operational Context**
-2. **Detailed Analytical Findings & References**
-3. **Regulatory Adherence Matrix (IS 18001 / ISO 45001)**
-4. **Sign-off Checklist for Shift Engineers**
-
-The formal document file is ready for download below.`;
     files.push({
       type: 'report',
-      name: `Audit_Report_${Date.now().toString().slice(-4)}.docx`,
-      download_url: `/files/Audit_Report_${Date.now().toString().slice(-4)}.docx`,
+      name: `Technical_Compliance_Audit_Report_${Date.now().toString().slice(-4)}.docx`,
+      download_url: `/files/Technical_Compliance_Audit_Report_${Date.now().toString().slice(-4)}.docx`,
     });
   } else {
-    answer = `### 🤖 Analysis & Response
-
-Based on the verified on-premise document index, here is the factual synthesis for your request:
-
-> **Query**: *"${query}"*
-
-#### Key Information:
-- **Primary Source**: \`HSE_Report_2025.pdf\` (Page 3 & Section 4.2)
-- **Status**: Verified by vector similarity score (0.94 cosine metric).
-- **Compliance Status**: All extracted operating limits fall within nominal PSU safety tolerances.
-
-Feel free to ask follow-up questions or request a PPT/Excel export.`;
+    title = 'Document Analysis Synthesis';
+    answer = `Based on the verified on-premise document index, the requested operating limits and procedure compliance metrics fall within nominal safety tolerances. All findings have been cross-referenced with your uploaded SOP documents.`;
   }
 
   // Save mock explanation for audit trace UI
@@ -218,7 +177,9 @@ Feel free to ask follow-up questions or request a PPT/Excel export.`;
 
   return {
     answer,
+    title,
     sources,
+    uncertainties,
     files,
     request_id: reqId,
   };

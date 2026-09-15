@@ -1,9 +1,10 @@
-﻿import json
+import json
 from typing import Any
 
 import faiss
 
 from app.config import settings
+from app.rag.chunker import is_instructional_chunk
 from app.rag.embeddings import EmbeddingProvider
 
 
@@ -34,6 +35,7 @@ class VectorStore:
         top_k: int = 5,
         file_id: str | None = None,
         min_similarity: float = 0.0,
+        include_instructional: bool = False,
     ) -> list[dict[str, Any]]:
         """Return deterministic positive-similarity matches, optionally for one file."""
         if not isinstance(query, str) or not query.strip() or self.index.ntotal == 0:
@@ -54,6 +56,9 @@ class VectorStore:
                 continue
             item = self.metadata[int(index)]
             if file_id is not None and item.get("file_id") != file_id:
+                continue
+            c_type = item.get("content_type")
+            if not include_instructional and (c_type == "instructional" or is_instructional_chunk(str(item.get("text", "")))):
                 continue
             candidates.append({**item, "score": float(score)})
 

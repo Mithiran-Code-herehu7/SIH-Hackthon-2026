@@ -37,7 +37,7 @@ export const SourcesRow: React.FC<SourcesRowProps> = ({ sources }) => {
     <div className="mt-4 pt-3 border-t border-[#E8E5DF]">
       <div className="flex items-center gap-1.5 text-xs font-semibold text-[#525663] mb-2.5 uppercase tracking-wider font-sans">
         <Bookmark className="h-3.5 w-3.5 text-[#312E81]" />
-        <span>Retrieved Sources & References ({sources.length})</span>
+        <span>From your files ({sources.length})</span>
       </div>
       <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
         {sources.map((src, index) => (

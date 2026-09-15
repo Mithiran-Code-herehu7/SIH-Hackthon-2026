@@ -1,4 +1,4 @@
-﻿from app.tools.registry import registry
+from app.tools.registry import registry
 
 from app.tools.document_search import document_metadata, document_search
 from app.tools.image_analysis import image_analysis
@@ -7,6 +7,8 @@ from app.tools.industrial_analysis import (
     compare_documents,
     generate_report,
 )
+from app.tools.excel_generator import generate_excel_workbook
+from app.tools.ppt_generator import generate_pptx_deck
 from app.tools.industrial_calculator import industrial_calculator
 
 
@@ -40,6 +42,31 @@ def procedure_lookup(**kwargs):
         sources=kwargs.get("sources", []),
         image_result=kwargs.get("image_result"),
     )
+
+
+def generate_excel(**kwargs):
+    return generate_excel_workbook(
+        filename=kwargs.get("filename", "MRPL_Operations_Safety_Demo_Pack_Incident_Register.xlsx"),
+        sources=kwargs.get("sources", []),
+    )
+
+
+def generate_ppt(**kwargs):
+    out_path = generate_pptx_deck(
+        filename=kwargs.get("filename", "Operational_Risk_Priorities_September_2026.pptx"),
+        title=kwargs.get("title", "Operational Risk Priorities: September 2026"),
+        sources=kwargs.get("sources", []),
+    )
+    return {
+        "task_type": "generate_ppt",
+        "requires_file": True,
+        "file_type": "pptx",
+        "title": kwargs.get("title", "Operational Risk Priorities: September 2026"),
+        "slide_count": 7,
+        "filename": kwargs.get("filename", "Operational_Risk_Priorities_September_2026.pptx"),
+        "file_path": str(out_path.resolve()),
+        "download_url": f"/files/{kwargs.get('filename', 'Operational_Risk_Priorities_September_2026.pptx')}",
+    }
 
 
 registry.register(
@@ -101,3 +128,15 @@ registry.register(
     description="Generate a structured industrial analysis report from bounded evidence and deterministic calculations.",
     handler=generate_report,
 )
+
+registry.register(
+    name="generate_excel",
+    description="Generate a multi-sheet Excel workbook containing structured incident records and summary metrics.",
+    handler=generate_excel,
+)
+
+registry.register(
+    name="generate_ppt",
+    description="Generate a 7-slide PowerPoint presentation deck containing operational risk priorities and safety scorecard metrics.",
+    handler=generate_ppt,
+)

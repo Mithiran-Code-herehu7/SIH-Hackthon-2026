@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 import pymupdf
 from docx import Document
@@ -23,7 +23,7 @@ def extract_text(file_path: Path) -> str:
     if extension == ".pptx":
         return _extract_pptx(file_path)
 
-    if extension == ".txt":
+    if extension in {".txt", ".md", ".markdown", ".log", ".csv"}:
         return file_path.read_text(encoding="utf-8", errors="ignore")
 
     raise ValueError(f"Unsupported file type: {extension}")

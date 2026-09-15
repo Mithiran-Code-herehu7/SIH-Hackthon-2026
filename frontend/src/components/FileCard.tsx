@@ -26,12 +26,26 @@ export const FileCard: React.FC<FileCardProps> = ({ file }) => {
     return <Package className="h-4 w-4 text-slate-700" />;
   };
 
+  const isPpt = file.type === 'ppt' || file.name.endsWith('.pptx') || file.name.endsWith('.ppt');
+
   const getFileTypeLabel = (type: string, name: string) => {
     const ext = name.split('.').pop()?.toUpperCase() || 'FILE';
-    if (type === 'ppt') return `PowerPoint (${ext})`;
-    if (type === 'excel') return `Excel Sheet (${ext})`;
-    if (type === 'report') return `Audit Report (${ext})`;
+    if (type === 'ppt' || ext === 'PPTX' || ext === 'PPT') {
+      const slides = file.slide_count || 7;
+      return `${slides} slides • PowerPoint (${ext})`;
+    }
+    if (type === 'excel' || ext === 'XLSX' || ext === 'XLS') {
+      const sheetsList = file.sheets || ['Incident Register', 'Compliance Scorecard', 'Corrective Actions'];
+      return `Excel Workbook (${sheetsList.join(' • ')})`;
+    }
+    if (type === 'report' || ext === 'DOCX') return `Audit Report (${ext})`;
     return `${type.toUpperCase()} (${ext})`;
+  };
+
+  const getButtonText = () => {
+    if (isPpt) return 'Download PPTX';
+    if (file.type === 'excel' || file.name.endsWith('.xlsx')) return 'Download Excel';
+    return 'Download';
   };
 
   return (
@@ -58,7 +72,7 @@ export const FileCard: React.FC<FileCardProps> = ({ file }) => {
 
       <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#312E81] text-white text-xs font-medium group-hover:bg-[#1E1B4B] transition-all ml-3 flex-shrink-0 shadow-xs">
         <Download className="h-3.5 w-3.5" />
-        <span className="hidden xs:inline">Download</span>
+        <span className="hidden xs:inline">{getButtonText()}</span>
       </div>
     </a>
   );

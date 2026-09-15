@@ -2,6 +2,21 @@
 node_modules/
 **/node_modules/
 
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+**/.pytest_cache/
+
+# Virtual Environments
+.venv/
+**/.venv/
+venv/
+env/
+
 # Next.js build
 .next/
 **/.next/
@@ -13,7 +28,16 @@ out/
 .env.local
 .env.*.local
 
+# Runtime Data, Storage & Vector Indexes
+data/
+backend/data/
+*.db
+*.sqlite
+*.sqlite3
+scratch/
+
 # OS & Temp files
 .DS_Store
 Thumbs.db
 *.log
+

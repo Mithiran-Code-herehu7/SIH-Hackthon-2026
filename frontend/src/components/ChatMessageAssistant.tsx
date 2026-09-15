@@ -7,6 +7,7 @@ import { Sparkles, HelpCircle, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { ChatMessageItem } from '@/lib/types';
 import { SourcesRow } from './SourceChip';
 import { FileCardsRow } from './FileCard';
+import { UncertaintiesSection } from './UncertaintiesSection';
 
 interface ChatMessageAssistantProps {
   message: ChatMessageItem;
@@ -54,6 +55,11 @@ export const ChatMessageAssistant: React.FC<ChatMessageAssistantProps> = ({
               {message.content}
             </ReactMarkdown>
           </div>
+        )}
+
+        {/* Uncertainties Block */}
+        {!message.isLoading && message.uncertainties && message.uncertainties.length > 0 && (
+          <UncertaintiesSection uncertainties={message.uncertainties} />
         )}
 
         {/* Sources Row */}

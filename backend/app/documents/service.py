@@ -13,6 +13,10 @@ ALLOWED_EXTENSIONS = {
     ".xlsx",
     ".pptx",
     ".txt",
+    ".md",
+    ".markdown",
+    ".log",
+    ".csv",
 }
 
 

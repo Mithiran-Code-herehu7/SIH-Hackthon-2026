@@ -7,6 +7,7 @@ import { ShieldCheck, ArrowUpRight, AlertCircle } from 'lucide-react';
 import { ChatMessageItem } from '@/lib/types';
 import { SourceReferenceSection } from './SourceReference';
 import { DeliverablesSection } from './DeliverableCard';
+import { UncertaintiesSection } from './UncertaintiesSection';
 
 interface AssistantResultProps {
   message: ChatMessageItem;
@@ -18,6 +19,7 @@ export const AssistantResult: React.FC<AssistantResultProps> = ({
   onViewExplanation,
 }) => {
   const getResultTitle = () => {
+    if (message.title) return message.title;
     switch (message.mode) {
       case 'generate_ppt':
         return 'Executive Presentation Deck Synthesis';
@@ -33,7 +35,7 @@ export const AssistantResult: React.FC<AssistantResultProps> = ({
   return (
     <div className="flex justify-start my-6 animate-fade-slide-up text-left">
       <div className="surface-card p-6 sm:p-8 w-full rounded-2xl border-[#DCD7CE]">
-        {/* Eyebrow Label */}
+        {/* 1. WORKBENCH RESULT Eyebrow Label */}
         <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-[#DCD7CE]/80">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-1 rounded-md bg-[#EAE5DC] text-[#2C2B5B] text-[10px] font-mono font-bold tracking-widest uppercase">
@@ -63,12 +65,12 @@ export const AssistantResult: React.FC<AssistantResultProps> = ({
           </div>
         ) : (
           <div>
-            {/* Answer Title */}
+            {/* 2. Result Title */}
             <h3 className="font-display-serif text-2xl font-bold text-[#1C1B24] mb-3 tracking-tight text-left">
               {getResultTitle()}
             </h3>
 
-            {/* Answer Body */}
+            {/* 3. Clean Final Answer */}
             <div className="markdown-body text-left">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {message.content}
@@ -77,17 +79,22 @@ export const AssistantResult: React.FC<AssistantResultProps> = ({
           </div>
         )}
 
-        {/* Sources Section */}
-        {!message.isLoading && message.sources && (
+        {/* 4. Optional "Information not found in the uploaded files" Block */}
+        {!message.isLoading && message.uncertainties && message.uncertainties.length > 0 && (
+          <UncertaintiesSection uncertainties={message.uncertainties} />
+        )}
+
+        {/* 5. "From your files" Sources Section */}
+        {!message.isLoading && message.sources && message.sources.length > 0 && (
           <SourceReferenceSection sources={message.sources} />
         )}
 
-        {/* Deliverables Section */}
-        {!message.isLoading && message.files && (
+        {/* 6. "Ready to use" Deliverables Section */}
+        {!message.isLoading && message.files && message.files.length > 0 && (
           <DeliverablesSection files={message.files} />
         )}
 
-        {/* "See how this was formed" Text Link */}
+        {/* 7. "See how this was formed" Audit Trail Link */}
         {!message.isLoading && message.request_id && (
           <div className="mt-5 pt-3 border-t border-[#DCD7CE]/80 flex items-center justify-between">
             <span className="text-[11px] font-mono text-[#666370]">

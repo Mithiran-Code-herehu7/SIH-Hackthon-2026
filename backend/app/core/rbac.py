@@ -102,7 +102,10 @@ def get_current_user(
     In sovereign on-premise deployments, requests originate from authenticated enterprise
     gateway or authenticated local session.
     """
-    raw_role = (x_user_role or settings.default_user_role).strip().upper()
+    role_str = x_user_role if isinstance(x_user_role, str) else None
+    user_id_str = x_user_id if isinstance(x_user_id, str) else None
+
+    raw_role = (role_str or settings.default_user_role).strip().upper()
 
     try:
         role = Role[raw_role]
@@ -111,7 +114,7 @@ def get_current_user(
             f"Invalid user role '{x_user_role}'. Allowed roles: {[r.value for r in Role]}"
         )
 
-    user_id = (x_user_id or f"sovereign_{role.value.lower()}_user").strip()
+    user_id = (user_id_str or f"sovereign_{role.value.lower()}_user").strip()
     permissions = ROLE_PERMISSIONS.get(role, set())
 
     return UserContext(user_id=user_id, role=role, permissions=permissions)
